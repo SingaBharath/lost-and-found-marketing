@@ -2,11 +2,20 @@
 
 > A production-quality, responsive marketing landing page built for the **Acdyon Technologies Frontend Engineering Challenge (Part 2 — The Premium Home Page)**.
 
+[![Live Demo](https://img.shields.io/badge/Live_URL-lost--and--found--marketing.vercel.app-0071E3?logo=vercel&logoColor=white)](https://lost-and-found-marketing.vercel.app/)
 ![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?logo=tailwind-css&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?logo=vite&logoColor=white)
 ![Gemini AI](https://img.shields.io/badge/Gemini_1.5-Flash_Multimodal-8E75B2?logo=googlegemini&logoColor=white)
+
+---
+
+## 🌐 Live URL & Submission Links
+
+- **Live Deployment**: **[https://lost-and-found-marketing.vercel.app/](https://lost-and-found-marketing.vercel.app/)**
+- **GitHub Repository**: **[https://github.com/SingaBharath/lost-and-found-marketing](https://github.com/SingaBharath/lost-and-found-marketing)**
+- **Technical Decisions**: **[`DECISIONS.md`](./DECISIONS.md)**
 
 ---
 
@@ -53,14 +62,12 @@
 
 ---
 
-## 💻 Getting Started (Local Setup)
+## 💻 Deployment & Local Development
 
-### Prerequisites
-- Node.js v18.0.0 or higher
-- npm 10+ or yarn/pnpm
+### Live Production URL
+Access the deployed site directly at: **[https://lost-and-found-marketing.vercel.app/](https://lost-and-found-marketing.vercel.app/)**
 
-### Installation
-
+### Local Setup
 1. Clone the repository:
    ```bash
    git clone https://github.com/SingaBharath/lost-and-found-marketing.git
@@ -72,11 +79,10 @@
    npm install
    ```
 
-3. Start the local development server:
+3. Start local development server:
    ```bash
    npm run dev
    ```
-   Open **http://localhost:3000** in your browser.
 
 4. Build for production:
    ```bash
