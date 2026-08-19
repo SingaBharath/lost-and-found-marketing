@@ -1,13 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import { Terminal, X, CheckCircle2, Cpu, Database, Smartphone } from 'lucide-react';
+import { Sparkles, X, Play, RefreshCw, CheckCircle2, Trophy, Flame, RotateCcw } from 'lucide-react';
+
+interface GameItem {
+  id: string;
+  name: string;
+  image: string;
+  location: string;
+}
+
+const ALL_ITEMS: GameItem[] = [
+  {
+    id: 'wallet',
+    name: 'Navy Leather Cardholder',
+    image: 'https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=400&q=80',
+    location: 'Central Library Box #4'
+  },
+  {
+    id: 'headphones',
+    name: 'Bose QC45 Headphones',
+    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80',
+    location: 'Auditorium B Desk'
+  },
+  {
+    id: 'bottle',
+    name: 'Hydro Flask Water Bottle',
+    image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=400&q=80',
+    location: 'Gym Desk Bin'
+  },
+  {
+    id: 'keys',
+    name: 'Set of Brass Keys with Lanyard',
+    image: 'https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=400&q=80',
+    location: 'Student Union Lounge'
+  },
+  {
+    id: 'glasses',
+    name: 'Ray-Ban Aviator Glasses',
+    image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&w=400&q=80',
+    location: 'Science Building Lab 3'
+  },
+  {
+    id: 'backpack',
+    name: 'Canvas Travel Backpack',
+    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=400&q=80',
+    location: 'Campus Shuttle Stop'
+  }
+];
 
 export const KonamiEasterEgg: React.FC = () => {
   const [active, setActive] = useState<boolean>(false);
   const [keySequence, setKeySequence] = useState<string[]>([]);
-  const [tested, setTested] = useState<boolean>(false);
+  
+  // Game State
+  const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameover'>('idle');
+  const [score, setScore] = useState<number>(0);
+  const [highScore, setHighScore] = useState<number>(0);
+  const [streak, setStreak] = useState<number>(0);
+  const [timeLeft, setTimeLeft] = useState<number>(10);
+  const [targetItem, setTargetItem] = useState<GameItem>(ALL_ITEMS[0]);
+  const [options, setOptions] = useState<GameItem[]>([]);
+  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
 
   const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
 
+  // Listen for Konami sequence
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const updated = [...keySequence, e.key];
@@ -25,72 +81,241 @@ export const KonamiEasterEgg: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [keySequence]);
 
+  // Timer loop when playing
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+
+    if (timeLeft <= 0) {
+      setGameState('gameover');
+      if (score > highScore) setHighScore(score);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [gameState, timeLeft, score, highScore]);
+
+  const startNewRound = () => {
+    const randomTarget = ALL_ITEMS[Math.floor(Math.random() * ALL_ITEMS.length)];
+    setTargetItem(randomTarget);
+
+    // Pick 3 other random options
+    const candidates = [randomTarget];
+    while (candidates.length < 4) {
+      const rand = ALL_ITEMS[Math.floor(Math.random() * ALL_ITEMS.length)];
+      if (!candidates.find(c => c.id === rand.id)) {
+        candidates.push(rand);
+      }
+    }
+    // Shuffle options
+    setOptions(candidates.sort(() => Math.random() - 0.5));
+    setTimeLeft(8);
+  };
+
+  const handleStartGame = () => {
+    setScore(0);
+    setStreak(0);
+    setFeedback(null);
+    setGameState('playing');
+    startNewRound();
+  };
+
+  const handleSelectOption = (selected: GameItem) => {
+    if (gameState !== 'playing') return;
+
+    if (selected.id === targetItem.id) {
+      // Correct Match!
+      setFeedback('correct');
+      const earned = 100 + streak * 20;
+      setScore(prev => prev + earned);
+      setStreak(prev => prev + 1);
+
+      setTimeout(() => {
+        setFeedback(null);
+        startNewRound();
+      }, 500);
+    } else {
+      // Wrong Match
+      setFeedback('wrong');
+      setStreak(0);
+      setTimeout(() => {
+        setFeedback(null);
+      }, 500);
+    }
+  };
+
   return (
     <>
-      {/* Clean Developer Diagnostics Panel */}
       {active && (
-        <div className="fixed bottom-6 right-6 z-[90] max-w-sm w-full bg-[#161617] text-white rounded-3xl border border-slate-800 p-5 shadow-2xl space-y-4 animate-in fade-in slide-in-from-bottom-5 duration-200">
-          
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center space-x-2">
-              <Terminal className="w-4 h-4 text-[#0071E3]" />
-              <span className="font-mono font-bold text-xs text-white">
-                Developer Diagnostics Mode
-              </span>
+        <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#0D0B14] border-2 border-purple-600 text-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-purple-900/40 pb-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center text-white font-bold text-xs shadow-md">
+                  🎮
+                </div>
+                <div>
+                  <h3 className="font-sans font-extrabold text-sm text-white flex items-center gap-1.5">
+                    Lost & Found AI Arcade Matcher
+                  </h3>
+                  <div className="text-[10px] font-mono text-purple-300">Playable Konami Easter Egg</div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setActive(false)}
+                className="p-1 text-slate-400 hover:text-white rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <button
-              onClick={() => setActive(false)}
-              className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            {/* Score & Streak Bar */}
+            <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono">
+              <div className="bg-[#080610] p-2 rounded-xl border border-purple-900/40">
+                <div className="text-slate-400 text-[10px]">Score</div>
+                <div className="text-purple-300 font-extrabold text-sm">{score}</div>
+              </div>
+
+              <div className="bg-[#080610] p-2 rounded-xl border border-purple-900/40">
+                <div className="text-slate-400 text-[10px]">Streak</div>
+                <div className="text-amber-400 font-extrabold text-sm flex items-center justify-center gap-0.5">
+                  <Flame className="w-3.5 h-3.5 fill-amber-400" />
+                  <span>x{streak}</span>
+                </div>
+              </div>
+
+              <div className="bg-[#080610] p-2 rounded-xl border border-purple-900/40">
+                <div className="text-slate-400 text-[10px]">High Score</div>
+                <div className="text-emerald-400 font-extrabold text-sm flex items-center justify-center gap-0.5">
+                  <Trophy className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{highScore}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Main Game Screen */}
+            {gameState === 'idle' && (
+              <div className="bg-[#080610] rounded-2xl p-6 border border-purple-900/40 text-center space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-purple-950 border border-purple-700 flex items-center justify-center mx-auto text-purple-300">
+                  <Sparkles className="w-6 h-6 animate-pulse text-purple-400" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-bold text-base text-white">Can you beat the AI Matcher?</h4>
+                  <p className="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
+                    Test your visual search speed! Match reported lost property items against security records before time expires.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleStartGame}
+                  className="px-6 py-2.5 rounded-full bg-gradient-to-r from-purple-600 via-violet-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white font-bold text-xs shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-2 mx-auto transition-transform active:scale-95"
+                >
+                  <Play className="w-4 h-4 fill-white" />
+                  <span>Start Game</span>
+                </button>
+              </div>
+            )}
+
+            {gameState === 'playing' && (
+              <div className="space-y-4">
+                
+                {/* Target Prompt */}
+                <div className="bg-[#080610] p-3 rounded-2xl border border-purple-800/60 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <div className="text-[10px] font-mono text-purple-400 uppercase font-bold">Target Reported Lost:</div>
+                    <div className="text-xs font-bold text-white">{targetItem.name}</div>
+                    <div className="text-[10px] text-slate-400">{targetItem.location}</div>
+                  </div>
+
+                  {/* Timer Bar */}
+                  <div className="flex items-center space-x-1.5 font-mono text-sm font-bold text-amber-400 bg-amber-950/60 px-3 py-1 rounded-xl border border-amber-800/60">
+                    <ClockIcon className="w-4 h-4" />
+                    <span>{timeLeft}s</span>
+                  </div>
+                </div>
+
+                {/* Candidate Selection Options Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  {options.map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => handleSelectOption(opt)}
+                      className={`relative rounded-2xl overflow-hidden border-2 aspect-video group transition-all ${
+                        feedback === 'correct' && opt.id === targetItem.id
+                          ? 'border-emerald-400 ring-2 ring-emerald-400 scale-[1.03]'
+                          : feedback === 'wrong' && opt.id !== targetItem.id
+                          ? 'border-rose-500 opacity-50'
+                          : 'border-purple-900/60 hover:border-purple-500 active:scale-95'
+                      }`}
+                    >
+                      <img src={opt.image} alt={opt.name} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent p-2 flex flex-col justify-end text-left text-white">
+                        <div className="text-[10px] font-bold truncate">{opt.name}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Feedback Toast */}
+                {feedback === 'correct' && (
+                  <div className="bg-emerald-950 border border-emerald-500 text-emerald-300 p-2 rounded-xl text-xs text-center font-mono font-bold flex items-center justify-center gap-1.5 animate-in fade-in">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>+100 PTS! AI Vector Distance Cosine Match (98.4%)</span>
+                  </div>
+                )}
+
+                {feedback === 'wrong' && (
+                  <div className="bg-rose-950 border border-rose-500 text-rose-300 p-2 rounded-xl text-xs text-center font-mono font-bold animate-in fade-in">
+                    ❌ Incorrect Match Candidate! Try Again
+                  </div>
+                )}
+
+              </div>
+            )}
+
+            {gameState === 'gameover' && (
+              <div className="bg-[#080610] rounded-2xl p-6 border border-purple-900/40 text-center space-y-4">
+                <div className="text-3xl font-extrabold text-white">Time's Up!</div>
+                <div className="text-sm font-mono text-purple-300">
+                  Final Score: <span className="text-white font-bold">{score}</span>
+                </div>
+
+                <button
+                  onClick={handleStartGame}
+                  className="px-6 py-2.5 rounded-full bg-gradient-to-r from-purple-600 via-violet-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white font-bold text-xs shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-2 mx-auto transition-transform active:scale-95"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Play Again</span>
+                </button>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="pt-2 border-t border-purple-900/40 flex items-center justify-between text-[10px] text-slate-400 font-mono">
+              <span>Konami Key sequence: ↑ ↑ ↓ ↓ ← → ← → B A</span>
+              <button onClick={() => setActive(false)} className="text-slate-400 hover:text-white">
+                Close Game
+              </button>
+            </div>
+
           </div>
-
-          <p className="text-xs text-slate-300 leading-relaxed font-sans">
-            🎮 <strong>Konami Code Unlocked!</strong> You activated the hidden developer diagnostics panel for Lost & Found AI.
-          </p>
-
-          {/* System Specs List */}
-          <div className="bg-black p-3 rounded-2xl border border-slate-800 space-y-2 text-xs font-mono">
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400">Android Build:</span>
-              <span className="text-white font-bold">Jetpack Compose 1.7</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400">Backend API:</span>
-              <span className="text-white font-bold">Spring Boot 3.3</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400">Vector Index:</span>
-              <span className="text-[#0071E3] font-bold">MongoDB Atlas (118ms)</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400">Vision Model:</span>
-              <span className="text-emerald-400 font-bold">Gemini 1.5 Flash</span>
-            </div>
-          </div>
-
-          {/* Test Action Button */}
-          <button
-            onClick={() => setTested(true)}
-            className="w-full py-2 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold text-xs transition-all flex items-center justify-center space-x-1.5"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>{tested ? 'Diagnostics Passed (100% Operational)' : 'Run System Diagnostic'}</span>
-          </button>
-
-          {/* Footer Note */}
-          <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-500 font-mono">
-            <span>Sequence: ↑ ↑ ↓ ↓ ← → ← → B A</span>
-            <button onClick={() => setActive(false)} className="text-slate-400 hover:text-white">
-              Dismiss
-            </button>
-          </div>
-
         </div>
       )}
     </>
   );
 };
+
+function ClockIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12 6 12 12 16 14"/>
+    </svg>
+  );
+}
