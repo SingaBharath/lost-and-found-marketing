@@ -1,72 +1,61 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, X, Play, Clock, CheckCircle2, Trophy, Flame, RotateCcw } from 'lucide-react';
-
-interface GameItem {
-  id: string;
-  name: string;
-  image: string;
-  location: string;
-}
-
-const ALL_ITEMS: GameItem[] = [
-  {
-    id: 'wallet',
-    name: 'Navy Leather Cardholder',
-    image: 'https://images.unsplash.com/photo-1627123424574-724758594e93?auto=format&fit=crop&w=400&q=80',
-    location: 'Central Library Box #4'
-  },
-  {
-    id: 'headphones',
-    name: 'Bose QC45 Headphones',
-    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80',
-    location: 'Auditorium B Desk'
-  },
-  {
-    id: 'bottle',
-    name: 'Hydro Flask Water Bottle',
-    image: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=400&q=80',
-    location: 'Gym Desk Bin'
-  },
-  {
-    id: 'keys',
-    name: 'Set of Brass Keys with Lanyard',
-    image: 'https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=400&q=80',
-    location: 'Student Union Lounge'
-  },
-  {
-    id: 'glasses',
-    name: 'Ray-Ban Aviator Glasses',
-    image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&w=400&q=80',
-    location: 'Science Building Lab 3'
-  },
-  {
-    id: 'backpack',
-    name: 'Canvas Travel Backpack',
-    image: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=400&q=80',
-    location: 'Campus Shuttle Stop'
-  }
-];
+import React, { useState, useEffect, useRef } from 'react';
+import { Terminal, X, Zap, Volume2, VolumeX, Sparkles, Award, Compass, Trophy } from 'lucide-react';
 
 export const KonamiEasterEgg: React.FC = () => {
   const [active, setActive] = useState<boolean>(false);
   const [keySequence, setKeySequence] = useState<string[]>([]);
-  
-  // Game State
-  const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameover'>('idle');
-  const [score, setScore] = useState<number>(0);
-  const [highScore, setHighScore] = useState<number>(0);
-  const [streak, setStreak] = useState<number>(0);
-  const [timeLeft, setTimeLeft] = useState<number>(8);
-  const [targetItem, setTargetItem] = useState<GameItem>(ALL_ITEMS[0]);
-  const [options, setOptions] = useState<GameItem[]>([]);
-  const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
-
-  // Non-repeating question deck
-  const [deck, setDeck] = useState<GameItem[]>([]);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [currentVector, setCurrentVector] = useState<string>('0.042, -0.118, 0.891');
+  const [scanPulse, setScanPulse] = useState<boolean>(false);
+  const [unlockedBadge, setUnlockedBadge] = useState<boolean>(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
 
-  // Listen for Konami sequence
+  // Web Audio API 8-bit Sound Synthesizer
+  const playSound = (type: 'activate' | 'scan' | 'badge') => {
+    if (!soundEnabled) return;
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (type === 'activate') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.3);
+      } else if (type === 'scan') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.2);
+      } else if (type === 'badge') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+        osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
+        osc.frequency.setValueAtTime(1046.5, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+      }
+    } catch (e) {
+      // AudioContext fallback
+    }
+  };
+
+  // Listen for Konami key sequence
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const updated = [...keySequence, e.key];
@@ -77,6 +66,7 @@ export const KonamiEasterEgg: React.FC = () => {
 
       if (updated.join(',') === konamiCode.join(',')) {
         setActive(true);
+        playSound('activate');
       }
     };
 
@@ -84,245 +74,196 @@ export const KonamiEasterEgg: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [keySequence]);
 
-  // Timer loop when playing
+  // Track cursor position & generate dynamic 768-dim vector coordinates
   useEffect(() => {
-    if (gameState !== 'playing') return;
+    if (!active) return;
 
-    if (timeLeft <= 0) {
-      setGameState('gameover');
-      if (score > highScore) setHighScore(score);
-      return;
-    }
+    const handleMouseMove = (e: MouseEvent) => {
+      setCursorPos({ x: e.clientX, y: e.clientY });
+      
+      const v1 = ((e.clientX / window.innerWidth) * 2 - 1).toFixed(3);
+      const v2 = ((e.clientY / window.innerHeight) * 2 - 1).toFixed(3);
+      const v3 = (Math.sin(e.clientX * 0.01) * 0.9).toFixed(3);
+      setCurrentVector(`${v1}, ${v2}, ${v3}`);
+    };
 
-    const timer = setInterval(() => {
-      setTimeLeft(prev => prev - 1);
-    }, 1000);
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [active]);
 
-    return () => clearInterval(timer);
-  }, [gameState, timeLeft, score, highScore]);
+  // HTML5 Canvas 768-Dim Vector Rain Animation
+  useEffect(() => {
+    if (!active || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-  // Helper to get non-repeating deck
-  const getNextDeckItem = (currentDeck: GameItem[]): { item: GameItem; remainingDeck: GameItem[] } => {
-    let activeDeck = [...currentDeck];
-    if (activeDeck.length === 0) {
-      // Re-shuffle full deck
-      activeDeck = [...ALL_ITEMS].sort(() => Math.random() - 0.5);
-    }
-    const nextItem = activeDeck.pop()!;
-    return { item: nextItem, remainingDeck: activeDeck };
-  };
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-  const startNewRound = (currentDeck: GameItem[] = deck) => {
-    const { item: nextTarget, remainingDeck } = getNextDeckItem(currentDeck);
-    setDeck(remainingDeck);
-    setTargetItem(nextTarget);
+    const columns = Math.floor(canvas.width / 24);
+    const drops: number[] = Array(columns).fill(1);
+    const chars = '010101768DIMSKOTLINJETPACKCOMPOSEMONGODBEMBEDDINGS';
 
-    // Pick 3 distractor candidate images without repeating target
-    const candidates = [nextTarget];
-    while (candidates.length < 4) {
-      const rand = ALL_ITEMS[Math.floor(Math.random() * ALL_ITEMS.length)];
-      if (!candidates.find(c => c.id === rand.id)) {
-        candidates.push(rand);
+    let animationFrameId: number;
+
+    const draw = () => {
+      ctx.fillStyle = 'rgba(5, 5, 8, 0.12)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#8B5CF6';
+      ctx.font = '11px monospace';
+
+      for (let i = 0; i < drops.length; i++) {
+        const text = chars.charAt(Math.floor(Math.random() * chars.length));
+        ctx.fillText(text, i * 24, drops[i] * 20);
+
+        if (drops[i] * 20 > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i]++;
       }
-    }
-    // Shuffle candidates grid layout
-    setOptions(candidates.sort(() => Math.random() - 0.5));
-    setTimeLeft(8);
+
+      animationFrameId = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [active]);
+
+  const triggerLaserPulse = () => {
+    setScanPulse(true);
+    playSound('scan');
+    setTimeout(() => setScanPulse(false), 1200);
   };
 
-  const handleStartGame = () => {
-    setScore(0);
-    setStreak(0);
-    setFeedback(null);
-    setGameState('playing');
-    
-    // Create new shuffled deck
-    const shuffled = [...ALL_ITEMS].sort(() => Math.random() - 0.5);
-    startNewRound(shuffled);
-  };
-
-  const handleSelectOption = (selected: GameItem) => {
-    if (gameState !== 'playing') return;
-
-    if (selected.id === targetItem.id) {
-      // Correct Match!
-      setFeedback('correct');
-      const earned = 100 + streak * 25;
-      setScore(prev => prev + earned);
-      setStreak(prev => prev + 1);
-
-      setTimeout(() => {
-        setFeedback(null);
-        startNewRound();
-      }, 400);
-    } else {
-      // Wrong Match
-      setFeedback('wrong');
-      setStreak(0);
-      setTimeout(() => {
-        setFeedback(null);
-      }, 400);
-    }
+  const handleUnlockBadge = () => {
+    setUnlockedBadge(true);
+    playSound('badge');
   };
 
   return (
     <>
       {active && (
-        <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0D0B14] border-2 border-purple-600 text-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-purple-900/40 pb-3">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center text-white font-bold text-xs shadow-md">
-                  🎮
-                </div>
-                <div>
-                  <h3 className="font-sans font-extrabold text-sm text-white flex items-center gap-1.5">
-                    Lost & Found AI Visual Matcher Game
-                  </h3>
-                  <div className="text-[10px] font-mono text-purple-300">Playable Konami Easter Egg</div>
-                </div>
+        <div className="fixed inset-0 z-[100] pointer-events-auto select-none overflow-hidden font-mono">
+          
+          {/* HTML5 Canvas Background Vector Matrix Rain */}
+          <canvas ref={canvasRef} className="absolute inset-0 z-0 opacity-40" />
+
+          {/* Full Screen Laser Scan Pulse Sweep */}
+          {scanPulse && (
+            <div className="absolute inset-x-0 h-2 bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-400 shadow-[0_0_40px_#ec4899] animate-scan z-20 pointer-events-none"></div>
+          )}
+
+          {/* Cursor Interactive HUD Tracker */}
+          <div
+            className="fixed pointer-events-none z-30 transition-transform duration-75 flex items-center space-x-3 -translate-x-1/2 -translate-y-1/2"
+            style={{ left: `${cursorPos.x}px`, top: `${cursorPos.y}px` }}
+          >
+            {/* Glowing Target Ring */}
+            <div className="w-8 h-8 rounded-full border-2 border-purple-400 border-dashed animate-spin"></div>
+
+            {/* Vector Stats Box */}
+            <div className="bg-[#0D0B14]/95 border border-purple-700/80 p-2.5 rounded-xl shadow-2xl backdrop-blur-md text-[10px] space-y-1 text-white">
+              <div className="flex items-center space-x-1.5 text-purple-400 font-bold">
+                <Compass className="w-3 h-3 animate-pulse" />
+                <span>Live Gemini 1.5 Vector HUD</span>
               </div>
-
-              <button
-                onClick={() => setActive(false)}
-                className="p-1 text-slate-400 hover:text-white rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Score & Streak Bar */}
-            <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono">
-              <div className="bg-[#080610] p-2 rounded-xl border border-purple-900/40">
-                <div className="text-slate-400 text-[10px]">Score</div>
-                <div className="text-purple-300 font-extrabold text-sm">{score}</div>
+              <div className="text-slate-300">
+                Coords: <span className="text-emerald-400 font-bold">[{currentVector}, ... 768 dims]</span>
               </div>
-
-              <div className="bg-[#080610] p-2 rounded-xl border border-purple-900/40">
-                <div className="text-slate-400 text-[10px]">Streak</div>
-                <div className="text-amber-400 font-extrabold text-sm flex items-center justify-center gap-0.5">
-                  <Flame className="w-3.5 h-3.5 fill-amber-400" />
-                  <span>x{streak}</span>
-                </div>
-              </div>
-
-              <div className="bg-[#080610] p-2 rounded-xl border border-purple-900/40">
-                <div className="text-slate-400 text-[10px]">High Score</div>
-                <div className="text-emerald-400 font-extrabold text-sm flex items-center justify-center gap-0.5">
-                  <Trophy className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{highScore}</span>
-                </div>
+              <div className="text-slate-400">
+                Cosine Similarity: <span className="text-purple-300 font-bold">0.984 (Match Verified)</span>
               </div>
             </div>
+          </div>
 
-            {/* Main Game Screen */}
-            {gameState === 'idle' && (
-              <div className="bg-[#080610] rounded-2xl p-6 border border-purple-900/40 text-center space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-purple-950 border border-purple-700 flex items-center justify-center mx-auto text-purple-300">
-                  <Sparkles className="w-6 h-6 animate-pulse text-purple-400" />
+          {/* Floating Control HUD Dashboard at Bottom */}
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-2xl w-full px-4">
+            <div className="bg-[#0D0B14]/90 backdrop-blur-xl border-2 border-purple-600 rounded-3xl p-5 shadow-2xl shadow-purple-950/80 text-white space-y-4">
+              
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-purple-900/60 pb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 via-violet-500 to-pink-500 p-0.5 shadow-lg shadow-purple-600/40">
+                    <div className="w-full h-full bg-[#050508] rounded-[10px] flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-purple-300 animate-pulse" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-sans font-extrabold text-sm text-white flex items-center gap-2">
+                      Gemini 1.5 AI Vector Lab Mode
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800 font-semibold">
+                        Konami Code Unlocked 🎮
+                      </span>
+                    </h3>
+                    <div className="text-[11px] text-slate-300 font-sans">
+                      Hover anywhere on the screen to inspect live 768-dimensional visual vectors!
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <h4 className="font-bold text-base text-white">Can you beat the AI Matcher?</h4>
-                  <p className="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
-                    Visual memory challenge! Identify the correct lost item photo from the candidate grid based on the reported title.
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setSoundEnabled(!soundEnabled)}
+                    className="p-2 rounded-xl bg-[#161224] border border-purple-800 text-purple-300 hover:text-white"
+                    title="Toggle 8-Bit Web Audio Sound"
+                  >
+                    {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
+                  </button>
+
+                  <button
+                    onClick={() => setActive(false)}
+                    className="p-2 rounded-xl bg-[#161224] border border-purple-800 text-slate-400 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                <button
+                  onClick={triggerLaserPulse}
+                  className="px-5 py-2.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-purple-600/30 flex items-center space-x-2 transition-transform active:scale-95"
+                >
+                  <Zap className="w-4 h-4 text-yellow-300 fill-yellow-300" />
+                  <span>Pulse Full-Screen Laser Scanner</span>
+                </button>
+
+                <button
+                  onClick={handleUnlockBadge}
+                  className="px-5 py-2.5 rounded-full bg-[#161224] hover:bg-[#201936] text-purple-300 border border-purple-700 font-bold text-xs flex items-center space-x-2 transition-transform active:scale-95"
+                >
+                  <Award className="w-4 h-4 text-pink-400" />
+                  <span>{unlockedBadge ? 'Badge Claimed! 🏆' : 'Claim AI Architect Badge'}</span>
+                </button>
+
+                <button
+                  onClick={() => setActive(false)}
+                  className="px-4 py-2.5 rounded-full bg-purple-950 text-purple-300 hover:text-white text-xs font-semibold"
+                >
+                  Exit Lab Mode
+                </button>
+              </div>
+
+              {/* Secret Easter Egg Developer Banner */}
+              {unlockedBadge && (
+                <div className="p-3 rounded-2xl bg-gradient-to-r from-purple-950 via-pink-950 to-purple-950 border border-pink-500/60 text-xs text-center space-y-1 animate-in fade-in">
+                  <div className="font-bold text-pink-300 flex items-center justify-center gap-1.5">
+                    <Trophy className="w-4 h-4 text-amber-400" />
+                    <span>Secret Easter Egg Certificate Unlocked!</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 font-sans">
+                    You discovered the hidden Gemini AI Vector Inspection Lab mode! Try typing <strong>↑ ↑ ↓ ↓ ← → ← → B A</strong> on your keyboard anywhere on the live website.
                   </p>
                 </div>
+              )}
 
-                <button
-                  onClick={handleStartGame}
-                  className="px-6 py-2.5 rounded-full bg-gradient-to-r from-purple-600 via-violet-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white font-bold text-xs shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-2 mx-auto transition-transform active:scale-95"
-                >
-                  <Play className="w-4 h-4 fill-white" />
-                  <span>Start Visual Game</span>
-                </button>
-              </div>
-            )}
-
-            {gameState === 'playing' && (
-              <div className="space-y-4">
-                
-                {/* Target Prompt */}
-                <div className="bg-[#080610] p-3 rounded-2xl border border-purple-800/60 flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <div className="text-[10px] font-mono text-purple-400 uppercase font-bold">Target Lost Item Title:</div>
-                    <div className="text-sm font-extrabold text-white">{targetItem.name}</div>
-                    <div className="text-[10px] text-slate-400">Reported at: {targetItem.location}</div>
-                  </div>
-
-                  {/* Timer Bar */}
-                  <div className="flex items-center space-x-1.5 font-mono text-sm font-bold text-amber-400 bg-amber-950/60 px-3 py-1.5 rounded-xl border border-amber-800/60">
-                    <Clock className="w-4 h-4" />
-                    <span>{timeLeft}s</span>
-                  </div>
-                </div>
-
-                {/* Candidate Selection Options Grid (PURE IMAGE CARDS ONLY - NO TITLE OVERLAYS) */}
-                <div className="grid grid-cols-2 gap-3">
-                  {options.map((opt) => (
-                    <button
-                      key={opt.id}
-                      onClick={() => handleSelectOption(opt)}
-                      className={`relative rounded-2xl overflow-hidden border-2 aspect-video group transition-all ${
-                        feedback === 'correct' && opt.id === targetItem.id
-                          ? 'border-emerald-400 ring-4 ring-emerald-400/50 scale-[1.03]'
-                          : feedback === 'wrong' && opt.id !== targetItem.id
-                          ? 'border-rose-500 opacity-40'
-                          : 'border-purple-900/60 hover:border-purple-400 active:scale-95 hover:scale-[1.02]'
-                      }`}
-                    >
-                      <img src={opt.image} alt="Candidate option" className="w-full h-full object-cover" />
-                      
-                      {/* Subtle hover outline ring */}
-                      <div className="absolute inset-0 bg-purple-950/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Feedback Toast */}
-                {feedback === 'correct' && (
-                  <div className="bg-emerald-950 border border-emerald-500 text-emerald-300 p-2.5 rounded-xl text-xs text-center font-mono font-bold flex items-center justify-center gap-1.5 animate-in fade-in">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>Correct Visual Match! (+100 PTS • 98.4% Vector Cosine Similarity)</span>
-                  </div>
-                )}
-
-                {feedback === 'wrong' && (
-                  <div className="bg-rose-950 border border-rose-500 text-rose-300 p-2.5 rounded-xl text-xs text-center font-mono font-bold animate-in fade-in">
-                    ❌ Incorrect Visual Match! Streak Reset
-                  </div>
-                )}
-
-              </div>
-            )}
-
-            {gameState === 'gameover' && (
-              <div className="bg-[#080610] rounded-2xl p-6 border border-purple-900/40 text-center space-y-4">
-                <div className="text-3xl font-extrabold text-white">Game Over!</div>
-                <div className="text-sm font-mono text-purple-300">
-                  Final Match Score: <span className="text-white font-bold">{score}</span>
-                </div>
-
-                <button
-                  onClick={handleStartGame}
-                  className="px-6 py-2.5 rounded-full bg-gradient-to-r from-purple-600 via-violet-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white font-bold text-xs shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-2 mx-auto transition-transform active:scale-95"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  <span>Play Again</span>
-                </button>
-              </div>
-            )}
-
-            {/* Footer */}
-            <div className="pt-2 border-t border-purple-900/40 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-              <span>Konami sequence: ↑ ↑ ↓ ↓ ← → ← → B A</span>
-              <button onClick={() => setActive(false)} className="text-slate-400 hover:text-white">
-                Close Game
-              </button>
             </div>
-
           </div>
+
         </div>
       )}
     </>

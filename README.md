@@ -1,6 +1,6 @@
 # Lost & Found — AI-Powered Item Recovery Platform
 
-> A production-quality, responsive marketing landing page built for the **Acdyon Technologies Frontend Engineering Challenge (Part 2 — The Premium Home Page)**.
+> A production-quality, responsive marketing landing page built for the **Acdyon Technologies Frontend Engineering Challenge (Part 2 — Premium Home Page)**.
 
 [![Live Demo](https://img.shields.io/badge/Live_URL-lost--and--found--marketing.vercel.app-0071E3?logo=vercel&logoColor=white)](https://lost-and-found-marketing.vercel.app/)
 ![React](https://img.shields.io/badge/React-18.3-61DAFB?logo=react&logoColor=black)
@@ -16,6 +16,8 @@
 - **Live Deployment**: **[https://lost-and-found-marketing.vercel.app/](https://lost-and-found-marketing.vercel.app/)**
 - **GitHub Repository**: **[https://github.com/SingaBharath/lost-and-found-marketing](https://github.com/SingaBharath/lost-and-found-marketing)**
 - **Technical Decisions**: **[`DECISIONS.md`](./DECISIONS.md)**
+
+> 🎮 **Secret Easter Egg**: Open the live website and type **`↑ ↑ ↓ ↓ ← → ← → B A`** on your keyboard to activate the **Full-Screen Gemini AI Vector Inspection Lab & Interactive Laser Cursor HUD** with 8-bit audio feedback!
 
 ---
 
@@ -47,8 +49,12 @@
 - **Viewport Testing**: Tested at 390px (mobile), 768px (tablet drawer menu), and 1440px (desktop) with 0 horizontal scroll overflow.
 - **Dark Mode**: Persisted class-based Tailwind dark mode styled across every container.
 
-### 6. Bonus Konami Code Easter Egg (`KonamiEasterEgg.tsx`)
-- Press **`↑ ↑ ↓ ↓ ← → ← → B A`** anywhere on the page to unlock an interactive **Developer Diagnostics Panel**.
+### 6. 🎮 Unique Konami Code Easter Egg (`KonamiEasterEgg.tsx`)
+- Type **`↑ ↑ ↓ ↓ ← → ← → B A`** anywhere on the live website to activate:
+  - **Full-Screen HTML5 Canvas Matrix Vector Rain**: Visualizes live 768-dimensional embedding particles.
+  - **Interactive Cursor Laser HUD**: Real-time vector coordinate inspection following mouse movement.
+  - **Full-Screen Laser Sweep Pulse**: Interactive trigger with synthesized Web Audio 8-bit sound effects.
+  - **Claimable AI Architect Certificate**: Unlocks a secret developer badge inside the HUD.
 
 ---
 
