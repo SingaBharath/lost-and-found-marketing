@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, X, Play, RefreshCw, CheckCircle2, Trophy, Flame, RotateCcw } from 'lucide-react';
+import { Sparkles, X, Play, Clock, CheckCircle2, Trophy, Flame, RotateCcw } from 'lucide-react';
 
 interface GameItem {
   id: string;
@@ -56,10 +56,13 @@ export const KonamiEasterEgg: React.FC = () => {
   const [score, setScore] = useState<number>(0);
   const [highScore, setHighScore] = useState<number>(0);
   const [streak, setStreak] = useState<number>(0);
-  const [timeLeft, setTimeLeft] = useState<number>(10);
+  const [timeLeft, setTimeLeft] = useState<number>(8);
   const [targetItem, setTargetItem] = useState<GameItem>(ALL_ITEMS[0]);
   const [options, setOptions] = useState<GameItem[]>([]);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+
+  // Non-repeating question deck
+  const [deck, setDeck] = useState<GameItem[]>([]);
 
   const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
 
@@ -98,19 +101,31 @@ export const KonamiEasterEgg: React.FC = () => {
     return () => clearInterval(timer);
   }, [gameState, timeLeft, score, highScore]);
 
-  const startNewRound = () => {
-    const randomTarget = ALL_ITEMS[Math.floor(Math.random() * ALL_ITEMS.length)];
-    setTargetItem(randomTarget);
+  // Helper to get non-repeating deck
+  const getNextDeckItem = (currentDeck: GameItem[]): { item: GameItem; remainingDeck: GameItem[] } => {
+    let activeDeck = [...currentDeck];
+    if (activeDeck.length === 0) {
+      // Re-shuffle full deck
+      activeDeck = [...ALL_ITEMS].sort(() => Math.random() - 0.5);
+    }
+    const nextItem = activeDeck.pop()!;
+    return { item: nextItem, remainingDeck: activeDeck };
+  };
 
-    // Pick 3 other random options
-    const candidates = [randomTarget];
+  const startNewRound = (currentDeck: GameItem[] = deck) => {
+    const { item: nextTarget, remainingDeck } = getNextDeckItem(currentDeck);
+    setDeck(remainingDeck);
+    setTargetItem(nextTarget);
+
+    // Pick 3 distractor candidate images without repeating target
+    const candidates = [nextTarget];
     while (candidates.length < 4) {
       const rand = ALL_ITEMS[Math.floor(Math.random() * ALL_ITEMS.length)];
       if (!candidates.find(c => c.id === rand.id)) {
         candidates.push(rand);
       }
     }
-    // Shuffle options
+    // Shuffle candidates grid layout
     setOptions(candidates.sort(() => Math.random() - 0.5));
     setTimeLeft(8);
   };
@@ -120,7 +135,10 @@ export const KonamiEasterEgg: React.FC = () => {
     setStreak(0);
     setFeedback(null);
     setGameState('playing');
-    startNewRound();
+    
+    // Create new shuffled deck
+    const shuffled = [...ALL_ITEMS].sort(() => Math.random() - 0.5);
+    startNewRound(shuffled);
   };
 
   const handleSelectOption = (selected: GameItem) => {
@@ -129,21 +147,21 @@ export const KonamiEasterEgg: React.FC = () => {
     if (selected.id === targetItem.id) {
       // Correct Match!
       setFeedback('correct');
-      const earned = 100 + streak * 20;
+      const earned = 100 + streak * 25;
       setScore(prev => prev + earned);
       setStreak(prev => prev + 1);
 
       setTimeout(() => {
         setFeedback(null);
         startNewRound();
-      }, 500);
+      }, 400);
     } else {
       // Wrong Match
       setFeedback('wrong');
       setStreak(0);
       setTimeout(() => {
         setFeedback(null);
-      }, 500);
+      }, 400);
     }
   };
 
@@ -161,7 +179,7 @@ export const KonamiEasterEgg: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-sans font-extrabold text-sm text-white flex items-center gap-1.5">
-                    Lost & Found AI Arcade Matcher
+                    Lost & Found AI Visual Matcher Game
                   </h3>
                   <div className="text-[10px] font-mono text-purple-300">Playable Konami Easter Egg</div>
                 </div>
@@ -208,7 +226,7 @@ export const KonamiEasterEgg: React.FC = () => {
                 <div className="space-y-1">
                   <h4 className="font-bold text-base text-white">Can you beat the AI Matcher?</h4>
                   <p className="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
-                    Test your visual search speed! Match reported lost property items against security records before time expires.
+                    Visual memory challenge! Identify the correct lost item photo from the candidate grid based on the reported title.
                   </p>
                 </div>
 
@@ -217,7 +235,7 @@ export const KonamiEasterEgg: React.FC = () => {
                   className="px-6 py-2.5 rounded-full bg-gradient-to-r from-purple-600 via-violet-600 to-pink-500 hover:from-purple-500 hover:to-pink-400 text-white font-bold text-xs shadow-lg shadow-purple-600/30 flex items-center justify-center space-x-2 mx-auto transition-transform active:scale-95"
                 >
                   <Play className="w-4 h-4 fill-white" />
-                  <span>Start Game</span>
+                  <span>Start Visual Game</span>
                 </button>
               </div>
             )}
@@ -228,19 +246,19 @@ export const KonamiEasterEgg: React.FC = () => {
                 {/* Target Prompt */}
                 <div className="bg-[#080610] p-3 rounded-2xl border border-purple-800/60 flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <div className="text-[10px] font-mono text-purple-400 uppercase font-bold">Target Reported Lost:</div>
-                    <div className="text-xs font-bold text-white">{targetItem.name}</div>
-                    <div className="text-[10px] text-slate-400">{targetItem.location}</div>
+                    <div className="text-[10px] font-mono text-purple-400 uppercase font-bold">Target Lost Item Title:</div>
+                    <div className="text-sm font-extrabold text-white">{targetItem.name}</div>
+                    <div className="text-[10px] text-slate-400">Reported at: {targetItem.location}</div>
                   </div>
 
                   {/* Timer Bar */}
-                  <div className="flex items-center space-x-1.5 font-mono text-sm font-bold text-amber-400 bg-amber-950/60 px-3 py-1 rounded-xl border border-amber-800/60">
-                    <ClockIcon className="w-4 h-4" />
+                  <div className="flex items-center space-x-1.5 font-mono text-sm font-bold text-amber-400 bg-amber-950/60 px-3 py-1.5 rounded-xl border border-amber-800/60">
+                    <Clock className="w-4 h-4" />
                     <span>{timeLeft}s</span>
                   </div>
                 </div>
 
-                {/* Candidate Selection Options Grid */}
+                {/* Candidate Selection Options Grid (PURE IMAGE CARDS ONLY - NO TITLE OVERLAYS) */}
                 <div className="grid grid-cols-2 gap-3">
                   {options.map((opt) => (
                     <button
@@ -248,31 +266,31 @@ export const KonamiEasterEgg: React.FC = () => {
                       onClick={() => handleSelectOption(opt)}
                       className={`relative rounded-2xl overflow-hidden border-2 aspect-video group transition-all ${
                         feedback === 'correct' && opt.id === targetItem.id
-                          ? 'border-emerald-400 ring-2 ring-emerald-400 scale-[1.03]'
+                          ? 'border-emerald-400 ring-4 ring-emerald-400/50 scale-[1.03]'
                           : feedback === 'wrong' && opt.id !== targetItem.id
-                          ? 'border-rose-500 opacity-50'
-                          : 'border-purple-900/60 hover:border-purple-500 active:scale-95'
+                          ? 'border-rose-500 opacity-40'
+                          : 'border-purple-900/60 hover:border-purple-400 active:scale-95 hover:scale-[1.02]'
                       }`}
                     >
-                      <img src={opt.image} alt={opt.name} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent p-2 flex flex-col justify-end text-left text-white">
-                        <div className="text-[10px] font-bold truncate">{opt.name}</div>
-                      </div>
+                      <img src={opt.image} alt="Candidate option" className="w-full h-full object-cover" />
+                      
+                      {/* Subtle hover outline ring */}
+                      <div className="absolute inset-0 bg-purple-950/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </button>
                   ))}
                 </div>
 
                 {/* Feedback Toast */}
                 {feedback === 'correct' && (
-                  <div className="bg-emerald-950 border border-emerald-500 text-emerald-300 p-2 rounded-xl text-xs text-center font-mono font-bold flex items-center justify-center gap-1.5 animate-in fade-in">
+                  <div className="bg-emerald-950 border border-emerald-500 text-emerald-300 p-2.5 rounded-xl text-xs text-center font-mono font-bold flex items-center justify-center gap-1.5 animate-in fade-in">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>+100 PTS! AI Vector Distance Cosine Match (98.4%)</span>
+                    <span>Correct Visual Match! (+100 PTS • 98.4% Vector Cosine Similarity)</span>
                   </div>
                 )}
 
                 {feedback === 'wrong' && (
-                  <div className="bg-rose-950 border border-rose-500 text-rose-300 p-2 rounded-xl text-xs text-center font-mono font-bold animate-in fade-in">
-                    ❌ Incorrect Match Candidate! Try Again
+                  <div className="bg-rose-950 border border-rose-500 text-rose-300 p-2.5 rounded-xl text-xs text-center font-mono font-bold animate-in fade-in">
+                    ❌ Incorrect Visual Match! Streak Reset
                   </div>
                 )}
 
@@ -281,9 +299,9 @@ export const KonamiEasterEgg: React.FC = () => {
 
             {gameState === 'gameover' && (
               <div className="bg-[#080610] rounded-2xl p-6 border border-purple-900/40 text-center space-y-4">
-                <div className="text-3xl font-extrabold text-white">Time's Up!</div>
+                <div className="text-3xl font-extrabold text-white">Game Over!</div>
                 <div className="text-sm font-mono text-purple-300">
-                  Final Score: <span className="text-white font-bold">{score}</span>
+                  Final Match Score: <span className="text-white font-bold">{score}</span>
                 </div>
 
                 <button
@@ -298,7 +316,7 @@ export const KonamiEasterEgg: React.FC = () => {
 
             {/* Footer */}
             <div className="pt-2 border-t border-purple-900/40 flex items-center justify-between text-[10px] text-slate-400 font-mono">
-              <span>Konami Key sequence: ↑ ↑ ↓ ↓ ← → ← → B A</span>
+              <span>Konami sequence: ↑ ↑ ↓ ↓ ← → ← → B A</span>
               <button onClick={() => setActive(false)} className="text-slate-400 hover:text-white">
                 Close Game
               </button>
@@ -310,12 +328,3 @@ export const KonamiEasterEgg: React.FC = () => {
     </>
   );
 };
-
-function ClockIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <circle cx="12" cy="12" r="10"/>
-      <polyline points="12 6 12 12 16 14"/>
-    </svg>
-  );
-}
