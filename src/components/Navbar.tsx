@@ -34,7 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode, onNavigat
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         
-        {/* Knight Bite Style Glowing Logo */}
+        {/* Brand Logo */}
         <div 
           onClick={() => handleNavClick('hero')}
           className="flex items-center space-x-3 cursor-pointer group"
@@ -51,7 +51,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode, onNavigat
           </div>
         </div>
 
-        {/* Knight Bite Styled Nav Links */}
+        {/* Nav Links (Singular "Why I Built It") */}
         <nav className="hidden md:flex items-center space-x-1 bg-[#0D0B14]/80 p-1.5 rounded-full border border-purple-900/40 backdrop-blur-md">
           <button
             onClick={() => handleNavClick('hero')}
@@ -82,7 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode, onNavigat
             onClick={() => handleNavClick('social-proof')}
             className="px-4 py-1.5 rounded-full text-xs font-medium text-slate-300 hover:text-white hover:bg-purple-900/40 transition-all"
           >
-            Why We Built It
+            Why I Built It
           </button>
         </nav>
 
@@ -135,7 +135,7 @@ export const Navbar: React.FC<NavbarProps> = ({ darkMode, setDarkMode, onNavigat
             onClick={() => handleNavClick('social-proof')}
             className="block w-full text-left py-2 text-sm font-medium text-slate-200"
           >
-            Why We Built It
+            Why I Built It
           </button>
           <button
             onClick={() => handleNavClick('demo')}

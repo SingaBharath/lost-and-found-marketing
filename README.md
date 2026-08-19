@@ -102,4 +102,4 @@ A 1-page design and technical decisions document is available at [`DECISIONS.md`
 
 ## 📄 License
 
-MIT License © 2026 Lost & Found Engineering Team. Built for the Acdyon Technologies Challenge.
+MIT License © 2026 Lost & Found Solo Developer. Built for the Acdyon Technologies Challenge.

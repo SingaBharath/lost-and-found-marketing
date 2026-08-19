@@ -10,12 +10,16 @@ export const SocialProof: React.FC = () => {
         <div className="text-center space-y-3">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-[#0D0B14] text-purple-300 text-xs font-semibold border border-purple-800/50">
             <Terminal className="w-3.5 h-3.5 text-purple-400" />
-            <span>Why We Built It</span>
+            <span>Why I Built It</span>
           </div>
 
           <h2 className="font-sans font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
-            "Campus lost property recovery was broken."
+            "Campus lost property recovery was broken. So I built visual search."
           </h2>
+
+          <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto">
+            I don't manufacture fake user testimonials or inflated download metrics. Here is the problem that inspired me to build Lost & Found.
+          </p>
         </div>
 
         {/* Human Personal Log Card */}
@@ -58,8 +62,8 @@ export const SocialProof: React.FC = () => {
           </div>
 
           <div className="pt-2 flex items-center justify-between text-xs text-slate-400">
-            <span className="font-medium text-slate-200">Lost & Found Engineering Team</span>
-            <span>Submitted for Acdyon Challenge</span>
+            <span className="font-medium text-slate-200">Solo Developer Submission</span>
+            <span>Acdyon Technologies Challenge</span>
           </div>
         </div>
 

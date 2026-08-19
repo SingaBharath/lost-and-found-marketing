@@ -55,7 +55,12 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               </li>
               <li>
                 <button onClick={() => onNavigate('architecture')} className="hover:text-white transition-colors">
-                  Tech Stack
+                  Tech Specs
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onNavigate('social-proof')} className="hover:text-white transition-colors">
+                  Why I Built It
                 </button>
               </li>
             </ul>
@@ -80,7 +85,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               Challenge Submission
             </h4>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Designed & built for the Acdyon Technologies Frontend Challenge.
+              Designed & built solo for the Acdyon Technologies Frontend Challenge.
             </p>
             
             <div className="pt-1">
